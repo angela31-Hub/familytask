@@ -1,0 +1,9 @@
+{
+  // Empêche VS Code de proposer « Reopen in Container » quand on ouvre ce dossier
+  // en local sur son Mac. Le .devcontainer/ ne sert QU'À GitHub Codespaces, où
+  // ce réglage est sans effet.
+  "dev.containers.defaultExtensions": [],
+  "remote.containers.defaultExtensions": [],
+  "dev.containers.autoDetect": false,
+  "remote.autoForwardPorts": false
+}

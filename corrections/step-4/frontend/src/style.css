@@ -1,0 +1,74 @@
+/* ===========================================================================
+   FamilyTask — design mobile (introduit à l'atelier 2)
+   Une seule page : en-tête + cartes. Mode clair et sombre.
+   =========================================================================== */
+:root {
+  --bg: #f3f4fb; --grad-1: #6d5efc; --grad-2: #a855f7;
+  --surface: #fff; --surface-2: #f4f5fb; --border: #e8e9f3;
+  --text: #171b2e; --muted: #7b8194;
+  --accent: #6d5efc; --accent-strong: #5646e6; --accent-soft: #eeecff;
+  --danger: #f43f5e; --danger-soft: #fdeef1;
+  --radius: 16px; --shadow: 0 1px 2px rgba(23,27,46,.05), 0 10px 30px rgba(23,27,46,.08);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0c0f1c; --surface: #161a2c; --surface-2: #1d2236; --border: #2a3050;
+    --text: #e9ecfa; --muted: #98a0bb; --accent-soft: #241f4d; --danger-soft: #3a1622;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 14px 34px rgba(0,0,0,.45);
+  }
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0; color: var(--text);
+  font-family: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: radial-gradient(1000px 500px at 50% -10%, #dcd8ff 0%, var(--bg) 55%);
+  -webkit-font-smoothing: antialiased;
+}
+@media (prefers-color-scheme: dark) {
+  body { background: radial-gradient(1000px 500px at 50% -10%, #1a1740 0%, var(--bg) 55%); }
+}
+
+header {
+  position: sticky; top: 0; z-index: 10;
+  background: linear-gradient(120deg, var(--grad-1), var(--grad-2));
+  color: #fff; padding: 18px 20px; box-shadow: 0 6px 24px rgba(109,94,252,.28);
+}
+header h1 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -.02em; }
+
+main { max-width: 460px; margin: 20px auto 60px; padding: 0 16px; display: flex; flex-direction: column; gap: 16px; }
+
+.card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 18px; box-shadow: var(--shadow);
+}
+h2 { font-size: 15px; font-weight: 700; margin: 0 0 12px; color: var(--text); }
+
+input, button {
+  font: inherit; font-size: 15px; padding: 12px 14px; border-radius: 12px;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  transition: border-color .15s, box-shadow .15s, filter .15s, transform .05s;
+}
+input::placeholder { color: var(--muted); }
+input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+button {
+  border: none; cursor: pointer; font-weight: 700; color: #fff;
+  background: linear-gradient(120deg, var(--grad-1), var(--grad-2));
+  box-shadow: 0 6px 16px rgba(109,94,252,.3);
+}
+button:hover { filter: brightness(1.05); }
+button:active { transform: translateY(1px); }
+
+.row { display: flex; gap: 10px; }
+.row input { flex: 1; }
+
+ul { list-style: none; padding: 0; margin: 0; }
+li { display: flex; align-items: center; gap: 12px; padding: 12px 6px; border-radius: 12px; transition: background .15s; }
+li:hover { background: var(--surface-2); }
+li + li { border-top: 1px solid var(--border); }
+li span { flex: 1; }
+input[type="checkbox"] { width: 22px; height: 22px; flex: none; padding: 0; accent-color: var(--accent); cursor: pointer; }
+.done span { text-decoration: line-through; color: var(--muted); }
+.trash { background: none; border: none; color: var(--danger); padding: 4px 9px; font-size: 17px; box-shadow: none; width: auto; }
+.trash:hover { background: var(--danger-soft); filter: none; }
+.hint { font-size: 13px; color: var(--muted); padding: 10px 4px; }

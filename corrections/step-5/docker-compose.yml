@@ -1,0 +1,49 @@
+services:
+  frontend:
+    image: node:20
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    ports:
+      - "5173:5173"
+    environment:
+      # Transmise au conteneur pour que vite.config.js sache s'il tourne dans
+      # un codespace (adresse en .app.github.dev) ou en local (localhost).
+      CODESPACES: ${CODESPACES:-}
+    command: sh -c "npm install && npm run dev -- --host"
+    depends_on:
+      - backend
+
+  backend:
+    build: ./backend
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://familytask:familytask@db:5432/familytask
+      # Clé de l'IA. Vient du secret Codespaces (ou du fichier .env en local).
+      # Sans elle, l'app marche : seul l'assistant IA répond qu'il n'est pas prêt.
+      AI_TOKEN: ${AI_TOKEN:-}
+    depends_on:
+      - db
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: familytask
+      POSTGRES_PASSWORD: familytask
+      POSTGRES_DB: familytask
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+# ---------------------------------------------------------------------------
+# Il n'y a plus de conteneur « ai ». L'IA de l'application est appelée en ligne
+# via GitHub Models : rien à télécharger, réponse en 1 s au lieu de 30 s, et
+# l'assistant fonctionne aussi une fois l'app déployée (ce qui n'était pas le
+# cas avec Ollama sur le plan gratuit de Render).
+# ---------------------------------------------------------------------------
+
+volumes:
+  pgdata:

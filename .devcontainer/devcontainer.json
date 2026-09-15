@@ -1,0 +1,79 @@
+{
+  // ---------------------------------------------------------------------------
+  // Sandbox en ligne du Summer Camp « Crée ton app avec l'IA ».
+  // Ce fichier décrit la machine que GitHub crée dans le cloud quand un
+  // participant clique sur « Code → Codespaces → Create codespace ».
+  // Le participant n'installe RIEN sur son PC : juste un navigateur.
+  // ---------------------------------------------------------------------------
+  "name": "FamilyTask — Summer Camp",
+
+  // Machine de base : un Ubuntu propre, léger, avec git et le terminal.
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+
+  "features": {
+    // Docker DANS le codespace : le cours 1 (conteneurs, docker compose up)
+    // reste identique, mais Docker tourne sur le serveur, pas sur le PC.
+    // C'est ce qui règle le problème WSL2 / Hyper-V des vieux PC Windows.
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest",
+      "dockerDashComposeVersion": "v2"
+    },
+    // Python côté machine (pas dans un conteneur) : sert uniquement à ce que
+    // VS Code et Copilot comprennent bien le code de backend/main.py.
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.12"
+    }
+  },
+
+  // 2 cœurs / 8 Go : la plus petite machine, donc celle qui consomme le moins
+  // de quota gratuit (120 core-hours/mois = 60 h réelles sur 2 cœurs).
+  "hostRequirements": {
+    "cpus": 2,
+    "memory": "8gb",
+    "storage": "32gb"
+  },
+
+  // Ports que le codespace expose au navigateur du participant.
+  "forwardPorts": [5173, 8000],
+  "portsAttributes": {
+    "5173": {
+      "label": "FamilyTask (le site)",
+      "onAutoForward": "notify"
+    },
+    "8000": {
+      "label": "API (le back-end)",
+      "onAutoForward": "silent"
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      // Extensions pré-installées : plus aucune étape « installe Copilot ».
+      "extensions": [
+        "GitHub.copilot",
+        "GitHub.copilot-chat",
+        "Vue.volar",
+        "ms-python.python",
+        "ms-azuretools.vscode-docker"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "files.autoSave": "afterDelay"
+      }
+    }
+  },
+
+  // Après création : on télécharge les 3 images Docker à l'avance, pour que le
+  // premier « docker compose up » de l'atelier 1 démarre en quelques secondes.
+  // Le « || true » évite qu'un échec réseau bloque l'ouverture du codespace.
+  "postCreateCommand": "docker pull node:20 && docker pull python:3.12-slim && docker pull postgres:16 || true",
+
+  // Petit message d'accueil à chaque ouverture du terminal.
+  "postAttachCommand": "bash .devcontainer/bienvenue.sh"
+
+  // NOTE — la clé de l'IA (AI_TOKEN) n'est PAS déclarée ici.
+  // Le token intégré du codespace n'a pas le droit « models:read ».
+  // Chaque participant crée un secret Codespaces nommé AI_TOKEN
+  // (github.com/settings/codespaces) : GitHub l'injecte tout seul
+  // comme variable d'environnement. Voir ATELIER 1, étape 3.
+}

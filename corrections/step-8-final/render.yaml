@@ -1,0 +1,58 @@
+# Render lit ce fichier et crée les 3 services (base, back, front) gratuitement.
+#
+# ⚠️ ATTENTION — ce fichier est celui du dossier autonome « step-8-final ».
+# Ses « rootDir » valent donc « backend » et « frontend ».
+#
+# Dans TON dépôt, render.yaml doit être posé à la RACINE (au même niveau que
+# les dossiers familytask/ et corrections/), et les rootDir deviennent :
+#     rootDir: familytask/backend
+#     rootDir: familytask/frontend
+#
+# C'est la seule différence entre ce fichier et le tien — mais c'est elle qui
+# fait échouer la plupart des premiers déploiements.
+databases:
+  - name: familytask-db
+    plan: free
+
+services:
+  - type: web
+    name: familytask-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: familytask-db
+          property: connectionString
+      # Clé de l'IA. « sync: false » = Render la demande au moment du déploiement
+      # au lieu de l'écrire en clair dans le fichier (une clé ne se pousse JAMAIS
+      # sur GitHub). Colle le même token que ton secret Codespaces AI_TOKEN.
+      - key: AI_TOKEN
+        sync: false
+
+  - type: web
+    name: familytask-front
+    runtime: static
+    # PAS de « plan: free » ici — et ce n'est pas un oubli.
+    # Les sites statiques sont TOUJOURS gratuits chez Render : le plan
+    # « free » n'existe pas pour eux. L'écrire quand même fait échouer la
+    # synchronisation du blueprint avec le message :
+    #     services[N].plan no such plan free for service type web
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    # SPA : toutes les URLs (/taches, /famille…) renvoient vers index.html,
+    # sinon rafraîchir une page autre que l'accueil donne une erreur 404.
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: familytask-api
+          property: host
