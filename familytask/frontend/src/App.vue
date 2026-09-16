@@ -1,65 +1,64 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-import TaskList from './components/TaskList.vue'
+import { ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { apiFetch } from './api'
 
-const status = ref('...')
-const tasks = ref([]) // Stocke les tâches chargées depuis l'API.
-const newTitle = ref('') // Stocke le titre saisi dans le formulaire.
+const route = useRoute()
+const router = useRouter()
+const member = ref(null)
+const hasToken = ref(false)
 
-async function loadTasks() { // Recharge la liste des tâches depuis l'API.
-  const response = await fetch('/api/tasks') // Demande toutes les tâches au back-end.
-  if (!response.ok) throw new Error('Impossible de charger les tâches') // Signale une erreur HTTP.
-  tasks.value = await response.json() // Remplace les données locales par la réponse du serveur.
-}
+async function loadCurrentMember() {
+  const token = localStorage.getItem('token')
+  hasToken.value = Boolean(token)
+  member.value = null
 
-async function addTask() { // Ajoute une nouvelle tâche dans la base de données.
-  const title = newTitle.value.trim() // Nettoie le titre saisi par l'utilisateur.
-  if (!title) return // Ignore l'envoi si le titre est vide.
-  const response = await fetch('/api/tasks', { // Appelle l'API de création.
-    method: 'POST', // Utilise la méthode HTTP POST.
-    headers: { 'Content-Type': 'application/json' }, // Indique que le corps est au format JSON.
-    body: JSON.stringify({ title }) // Envoie le titre au back-end.
-  })
-  if (!response.ok) throw new Error('Impossible d’ajouter la tâche') // Signale une erreur HTTP.
-  newTitle.value = '' // Vide le champ après une création réussie.
-  await loadTasks() // Recharge la liste depuis la base de données.
-}
+  if (!token) return
 
-async function toggleTask(taskToToggle) { // Bascule l'état d'une tâche dans la base.
-  const response = await fetch(`/api/tasks/${taskToToggle.id}`, { method: 'PATCH' }) // Appelle l'API de basculement.
-  if (!response.ok) throw new Error('Impossible de modifier la tâche') // Signale une erreur HTTP.
-  await loadTasks() // Recharge la liste après la modification.
-}
-
-async function removeTask(taskToRemove) { // Supprime une tâche de la base de données.
-  const response = await fetch(`/api/tasks/${taskToRemove.id}`, { method: 'DELETE' }) // Appelle l'API de suppression.
-  if (!response.ok) throw new Error('Impossible de supprimer la tâche') // Signale une erreur HTTP.
-  await loadTasks() // Recharge la liste après la suppression.
-}
-
-onMounted(async () => {
   try {
-    const healthResponse = await fetch('/api/health') // Vérifie que le back-end répond.
-    status.value = (await healthResponse.json()).status // Affiche l'état du back-end.
-    await loadTasks() // Charge les tâches au démarrage de l'application.
-  } catch (e) {
-    status.value = 'back pas encore prêt'
+    const response = await apiFetch('/api/me')
+    if (!response.ok) {
+      localStorage.removeItem('token')
+      hasToken.value = false
+      return
+    }
+    member.value = await response.json()
+  } catch {
+    // Le garde de navigation protège toujours les pages privées si le serveur est indisponible.
   }
-})
+}
+
+async function logout() {
+  try {
+    await apiFetch('/api/logout', { method: 'POST' })
+  } finally {
+    // La déconnexion locale reste garantie, même si le serveur ne répond pas.
+    localStorage.removeItem('token')
+    hasToken.value = false
+    member.value = null
+    await router.push('/login')
+  }
+}
+
+watch(() => route.path, loadCurrentMember, { immediate: true })
 </script>
 
 <template>
-  <header><h1>🏠 FamilyTask</h1></header>
-  <main>
-    <div class="card">
-      <h2>Bienvenue ! 🎉</h2>
-      <p>Ton environnement fonctionne : le front (Vue) tourne sur le port 5173.</p>
-      <p class="hint">Réponse du back : <strong>{{ status }}</strong></p>
-      <form @submit.prevent="addTask">
-        <input v-model="newTitle" type="text" placeholder="Nouvelle tâche" aria-label="Titre de la tâche">
-        <button type="submit">Ajouter</button>
-      </form>
-      <TaskList :tasks="tasks" @toggle="toggleTask" @remove="removeTask" />
+  <div class="app-shell">
+  <header class="app-header">
+    <div class="topbar">
+      <RouterLink class="brand" to="/tasks"><span class="brand-mark">F</span><span>FamilyTask</span></RouterLink>
+      <div v-if="hasToken" class="member-bar">
+        <span v-if="member" class="welcome"><span class="avatar avatar-small">{{ member.name.charAt(0).toUpperCase() }}</span><span>Bonjour {{ member.name }}</span></span>
+        <button class="logout-button" type="button" aria-label="Se déconnecter" @click="logout">Sortir</button>
+      </div>
     </div>
-  </main>
-</template>git add 
+  </header>
+  <RouterView />
+  <nav v-if="hasToken" class="bottom-tabs" aria-label="Navigation principale">
+    <RouterLink to="/tasks">Tâches</RouterLink>
+    <RouterLink to="/assistant">Assistant</RouterLink>
+    <RouterLink v-if="member?.is_admin" to="/family">Famille</RouterLink>
+  </nav>
+  </div>
+</template>
