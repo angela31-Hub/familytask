@@ -17,6 +17,8 @@ from sqlalchemy import inspect, text  # Importe les outils utilisés pour vérif
 from sqlmodel import Field, SQLModel, Session, create_engine, select  # Importe les outils de modèle, de session, de connexion et de requête SQL.
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///familytask.db")  # Récupère l'adresse de la base de données.
+if DATABASE_URL.startswith("postgres://"):  # Render peut fournir l'ancien préfixe PostgreSQL.
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)  # Utilise le schéma attendu par SQLAlchemy.
 TOKEN_SECRET = os.getenv("TOKEN_SECRET", "familytask-dev-secret")  # Récupère la clé secrète utilisée pour signer les tokens.
 ASSISTANT_TOOLS = [  # Déclare les outils que le modèle peut utiliser.
     {
